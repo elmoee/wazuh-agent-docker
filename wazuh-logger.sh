@@ -16,7 +16,8 @@ trap "exit 0" SIGINT
 while true 
 do
     date +%s
-    top -bc -n 1 | grep -E '[w]azuh|[o]squery' --line-buffered | grep -v logger --line-buffered | awk '{print $6,$9,$10,$12}'
+    # $12=command, $9=%cpu, $10=%mem, $6=mem bytes
+    top -bc -n 1 | awk '/\/(wazuh|osquery)/ {n = split($12, arr, "/"); print arr[n],$9,$10,$6}' | grep -v bash
     echo ""
     sleep 1
 done
