@@ -26,5 +26,9 @@ RUN chmod +x /etc/my_init.d/wazuhd.sh
 COPY osqueryd.sh /etc/my_init.d/osqueryd.sh
 RUN chmod +x /etc/my_init.d/osqueryd.sh
 
+RUN mkdir /var/log/wazuh
+COPY wazuh-logger.sh /usr/bin/wazuh-logger
+RUN chmod +x /usr/bin/wazuh-logger
+
 # Clean up APT when done.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
