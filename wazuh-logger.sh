@@ -2,10 +2,12 @@
 
 logfile="/var/log/wazuh/stats.log"
 
+# remove log if it exists
 if [ -e $logfile ]; then
    rm $logfile
 fi
 
+# stdout to log
 exec >$logfile
 
 # Update top relative
