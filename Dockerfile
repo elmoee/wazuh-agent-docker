@@ -3,6 +3,13 @@ FROM phusion/baseimage:focal-1.0.0
 # Use baseimage-docker's init system.
 CMD ["/sbin/my_init"]
 
+RUN rm -f /etc/service/sshd/down
+
+# Regenerate SSH host keys. baseimage-docker does not contain any, so you
+# have to do that yourself. You may also comment out this instruction; the
+# init system will auto-generate one during boot.
+RUN /etc/my_init.d/00_regen_ssh_host_keys.sh
+
 RUN apt update
 RUN apt install -y gnupg curl
 
@@ -10,12 +17,8 @@ RUN apt install -y gnupg curl
 RUN curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | apt-key add -
 RUN echo "deb https://packages.wazuh.com/4.x/apt/ stable main" | tee -a /etc/apt/sources.list.d/wazuh.list
 
-# osquery
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 1484120AC4E9F8A1A577AEEE97A80C63C9D8B80B
-RUN add-apt-repository 'deb [arch=amd64] https://pkg.osquery.io/deb deb main'
-
 RUN apt update
-RUN apt install -y osquery wazuh-agent
+RUN apt install -y wazuh-agent
 RUN echo "wazuh-agent hold" | dpkg --set-selections
 
 RUN mkdir -p /etc/my_init.d
@@ -23,12 +26,12 @@ RUN mkdir -p /etc/my_init.d
 COPY wazuhd.sh /etc/my_init.d/wazuhd.sh
 RUN chmod +x /etc/my_init.d/wazuhd.sh
 
-COPY osqueryd.sh /etc/my_init.d/osqueryd.sh
-RUN chmod +x /etc/my_init.d/osqueryd.sh
+# authorize SSH connection with root account
+RUN sed -i 's/^#.*PermitRootLogin .*/PermitRootLogin yes/' /etc/ssh/sshd_config
+RUN service ssh restart
 
-RUN mkdir /var/log/wazuh
-COPY wazuh-logger.sh /usr/bin/wazuh-logger
-RUN chmod +x /usr/bin/wazuh-logger
+# change password root
+RUN echo "root:root" | chpasswd
 
 # Clean up APT when done.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
